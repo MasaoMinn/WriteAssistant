@@ -1,33 +1,42 @@
 "use client";
-import { useEffect, useState } from "react";
-import NavBar from "@/components/navbar";
-import { Container } from "react-bootstrap";
-import { useTheme, darkTheme, lightTheme } from "@/context/theme";
-import Mail from "../components/mail/mail";
-import BgImgHandler from "@/components/bgimgHandler";
 
-export default function Main() {
-  const { theme } = useTheme();
-  // 初始化 imgUrl 状态
-  const [imgUrl, setImgUrl] = useState<'/game.png'|'/furry1.png'|'/furry2.png'|'#FF0000'|'#00FF00'|'#FFFFFF'>('#FFFFFF');
-  const { BgImgStyle, DropdownComponent } = BgImgHandler(imgUrl, setImgUrl);
+import { useState } from "react";
+import { Container, Nav, Navbar } from "react-bootstrap";
+import Home from './main/home';
+import Work from './main/works';
+import Inspiration from './main/inspiration';
+import Login from './main/login';
 
-  const [mainStyle, setMainStyle] = useState({
-    ...(theme === 'dark' ? darkTheme : lightTheme),
-    ...BgImgStyle()
-  });
-
-  useEffect(() => {
-    setMainStyle({
-      ...(theme === 'dark' ? darkTheme : lightTheme),
-      ...BgImgStyle()
-    });
-  }, [theme, imgUrl]);
+const Main: React.FC = () => {
+  const [status, setStatus] = useState<'login' | 'work' | 'inspiration' | 'home'>('home');
 
   return (
-    <Container fluid style={mainStyle} className="p-2">
-      <NavBar DropdownComponent={DropdownComponent} />
-      <Mail />
-    </Container>
+    <>
+      <Navbar bg="light" expand="lg">
+        <Container>
+          <Navbar.Brand href="./">Writing Assistant</Navbar.Brand>
+          <Navbar.Toggle aria-controls="basic-navbar-nav" />
+          <Navbar.Collapse id="basic-navbar-nav">
+            <Nav className="me-auto">
+              <Nav.Link onClick={() => setStatus('home')}>主页</Nav.Link>
+              <Nav.Link onClick={() => setStatus('work')}>我的作品</Nav.Link>
+              <Nav.Link onClick={() => setStatus('inspiration')}>灵感库</Nav.Link>
+            </Nav>
+            <Nav>
+              <Nav.Link onClick={() => setStatus('login')}>登录/注册</Nav.Link>
+            </Nav>
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
+      <Container>
+        {status === 'home' && <Home />}
+        {status === 'work' && <Work />}
+        {status === 'inspiration' && <Inspiration />}
+        {status === 'login' && <Login />}
+      </Container>
+    </>
   );
-}
+};
+
+
+export default Main;

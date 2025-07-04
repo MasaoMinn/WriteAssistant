@@ -49,7 +49,7 @@ type UserData = {
   emailAddress: string;
   telephone: string;
   createTime: string;
-  updateTime: string;
+  systemWord: string;
 };
 
 type UserContextType = {

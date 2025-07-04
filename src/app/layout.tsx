@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {UserInfoProvider} from "@/context/user";
-import {ThemeProvider} from "@/context/theme"; 
 import 'bootstrap-icons/font/bootstrap-icons.css';
 export const metadata: Metadata = {
   title: "mailbox",
@@ -16,10 +15,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <UserInfoProvider>
-        <ThemeProvider> 
       <body>
         {children}
-      </body></ThemeProvider>
+      </body>
       </UserInfoProvider>
     </html>
   );
