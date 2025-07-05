@@ -119,6 +119,15 @@ const ForeshadowingLibrary = () => {
               <Button variant="primary" onClick={handleSave}>保存</Button>
             </Form>
           </Card.Body>
+          <Card.Body>
+            <Card.Title>{editedTitle}</Card.Title>
+            <Card.Text>{editedDescription}</Card.Text>
+            <Button 
+
+            >
+              问AI
+            </Button>
+          </Card.Body>
         </Card>
       )}
     </div>

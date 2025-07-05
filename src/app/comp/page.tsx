@@ -1,10 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Col, Container, Row } from "react-bootstrap";
+import { Button, Col, Container, Row } from "react-bootstrap";
 import { useUserInfo } from "@/context/user"; 
 import { getCookie } from "@/context/user";
-import { Editor, EditorState } from 'draft-js';
-import 'draft-js/dist/Draft.css';
 import Link from "next/link";
 import ChatBox from "@/components/chatbox";
 import CharacterSetting from "@/app/comp/CharacterSetting";
@@ -13,6 +11,7 @@ import ForeshadowingLibrary from "./ForeshadowingLibrary";
 export default function MailComponent() {
   const { userInfo, setUserInfo } = useUserInfo(); 
   const [status, setStatus] = useState<'write'|'fubi'|'sheding'|'dagang'>('write');
+  
 
   useEffect(() => {
     const userInfoCookie = getCookie('userInfo');
@@ -31,19 +30,14 @@ export default function MailComponent() {
   }, [userInfo, setUserInfo]);
 
   const Write = () => {
-    const [editorState, setEditorState] = useState(() => EditorState.createEmpty());
-    
-
-    const handleEditorChange = (newEditorState: EditorState) => {
-      setEditorState(newEditorState);
-    };
-
+    const [article,setArticle] = useState<string>('示例小说');
     return (
       <div className="p-3 mb-3 border border-secondary rounded-3" style={{ minHeight: '300px', backgroundColor: '#f8f9fa' }}>
-        <Editor
-          editorState={editorState}
-          onChange={handleEditorChange}
-          placeholder="开始写作..."
+        <textarea
+          onChange={(e) => setArticle(e.target.value)}
+          value={article}
+          className="w-100"
+          style={{minHeight:'100vh'}}
         />
       </div>
     );
@@ -53,37 +47,31 @@ export default function MailComponent() {
     type dagang = {
       title: string;
       story: string;
-      characters: string[];
       children: dagang[];
     };
     const initialOutline: dagang[] = [
       {
         title: "大纲标题",
         story: "大纲故事内容",
-        characters: ["角色1", "角色2"],
         children: []
       },
       {
         title: "大纲标题2",
         story: "大纲故事内容2",
-        characters: ["角色3", "角色4"],
         children: []
       },
       {
         title: "大纲标题3",
         story: "大纲故事内容3",
-        characters: ["角色5", "角色6"],
         children: [
           {
             title: "子大纲标题1",
             story: "子大纲故事内容1",
-            characters: ["子角色1", "子角色2"],
             children: []
           },
           {
             title: "子大纲标题2",
             story: "子大纲故事内容2",
-            characters: ["子角色3", "子角色4"],
             children: []
           }
         ]
@@ -123,7 +111,10 @@ export default function MailComponent() {
 
     const updateNestedItem = (item: dagang, path: number[], key: 'title' | 'story', value: string): dagang => {
       if (path.length === 0) {
-        return { ...item, [key]: value };
+        return {
+          ...item,
+          [key]: value
+        };
       }
       return {
         ...item,
@@ -143,13 +134,6 @@ export default function MailComponent() {
       setEditedOutline(newOutline);
     };
 
-    const handleCharactersChange = (index: number, value: string[]) => {
-      console.log(`修改角色索引 ${index} 为:`, value);
-      const newOutline = [...editedOutline];
-      newOutline[index].characters = value;
-      setEditedOutline(newOutline);
-    };
-
     const handleDeleteClick = (path: number[]) => {
       setEditedOutline(prev => {
         const newOutline = [...prev];
@@ -166,7 +150,25 @@ export default function MailComponent() {
       });
     };
 
-    const handleAddClick = (path: number[]) => {
+    const handleAddSiblingClick = (path: number[]) => {
+      const newOutline = [...editedOutline];
+      let parentLevel = newOutline;
+      
+      // 遍历到父级层级
+      for (let i = 0; i < path.length - 1; i++) {
+        parentLevel = parentLevel[path[i]].children;
+      }
+      
+      const index = path[path.length - 1];
+      parentLevel.splice(index + 1, 0, {
+        title: "新大纲项",
+        story: "",
+        children: []
+      });
+      setEditedOutline(newOutline);
+    };
+
+    const handleAddChildClick = (path: number[]) => {
       const newOutline = [...editedOutline];
       let currentLevel = newOutline;
       
@@ -175,9 +177,8 @@ export default function MailComponent() {
       }
       
       currentLevel.push({
-        title: "新大纲项",
+        title: "新子大纲项",
         story: "",
-        characters: [],
         children: []
       });
       setEditedOutline(newOutline);
@@ -219,11 +220,18 @@ export default function MailComponent() {
                       </button>
                     )}
                     <button
-                      onClick={() => handleAddClick(currentPath)}
+                      onClick={() => handleAddSiblingClick(currentPath)}
+                      className="btn btn-light me-2"
+                      style={{ marginRight: '5px' }}
+                    >
+                      添加同级
+                    </button>
+                    <button
+                      onClick={() => handleAddChildClick(currentPath)}
                       className="btn btn-light"
                       style={{ marginRight: '5px' }}
                     >
-                      <i className="bi bi-plus"></i>
+                      添加子级
                     </button>
                     <button
                       onClick={() => handleDeleteClick(currentPath)}
@@ -241,19 +249,6 @@ export default function MailComponent() {
                     />
                   ) : (
                     <p className="text-muted fs-6 mb-3">{item.story}</p>
-                  )}
-                  {isCurrentItemEditing ? (
-                    <input
-                      type="text"
-                      value={item.characters.join(', ')}
-                      onChange={(e) =>
-                        handleCharactersChange(index, e.target.value.split(', ').filter(Boolean))
-                      }
-                      placeholder="角色，用逗号分隔"
-                      style={{ width: '100%', marginTop: '10px' }} // 添加样式使输入框自适应
-                    />
-                  ) : (
-                    <p>角色: {item.characters.join(', ')}</p>
                   )}
                 </div>
                 {itemChildren.length > 0 && renderOutline(itemChildren, level + 1, currentPath)}
@@ -285,6 +280,7 @@ export default function MailComponent() {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return `AI Reply to: "${message}"`;
   };
+  const [aiShow,setAiShow] = useState<boolean>(true);
 
   return (
     <> 
@@ -331,7 +327,10 @@ export default function MailComponent() {
           {status === 'sheding' && <CharacterSetting />}
           {status === 'fubi' && <ForeshadowingLibrary />}
         </Col>
-        <Col>
+        <Col lg={1}>
+          <Button variant="light" style={{height:'100vh'}} onClick={()=>setAiShow(!aiShow)}>{aiShow?'>':'<'}</Button>
+        </Col>
+        <Col style={{display:aiShow?'block':'none'}}>
           <ChatBox onSend={mockAiReply}/>
         </Col>
       </Row>

@@ -1,11 +1,11 @@
 import React, { useState, createContext, useContext } from 'react';
-import { Button, Card, Form, InputGroup, ListGroup } from 'react-bootstrap';
+import { Button, Card, Form, InputGroup, Modal } from 'react-bootstrap';
 
 // 创建灵感卡片上下文
 const InspirationContext = createContext<{
-  inspirations: { id: number; title: string; content: string; tag: string }[];
-  addInspiration: (title: string, content: string, tag: string) => void;
-  updateInspiration: (id: number, title: string, content: string, tag: string) => void;
+  inspirations: { id: number; title: string; content: string; tag: string; backgroundColor: string; textColor: string }[];
+  addInspiration: (title: string, content: string, tag: string, backgroundColor: string, textColor: string) => void;
+  updateInspiration: (id: number, title: string, content: string, tag: string, backgroundColor: string, textColor: string) => void;
   deleteInspiration: (id: number) => void;
 } | null>(null);
 
@@ -16,22 +16,28 @@ const InspirationProvider: React.FC<{ children: React.ReactNode }> = ({ children
     title: string;
     content: string;
     tag: string;
+    backgroundColor: string;
+    textColor: string;
   }[]>([
     {
       id: 1,
       title: '示例主题1',
       content: '这是一个示例灵感内容。',
       tag: '示例分类',
+      backgroundColor: '#ffffff',
+      textColor: '#000000',
     },
     {
       id: 2,
       title: '示例主题2',
       content: '另一个示例灵感内容。',
       tag: '示例分类',
+      backgroundColor: '#ffffff',
+      textColor: '#000000',
     },
   ]);
 
-  const addInspiration = (title: string, content: string, tag: string) => {
+  const addInspiration = (title: string, content: string, tag: string, backgroundColor: string, textColor: string) => {
     setInspirations([
       ...inspirations,
       {
@@ -39,15 +45,17 @@ const InspirationProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title,
         content,
         tag,
+        backgroundColor,
+        textColor,
       },
     ]);
   };
 
-  const updateInspiration = (id: number, title: string, content: string, tag: string) => {
+  const updateInspiration = (id: number, title: string, content: string, tag: string, backgroundColor: string, textColor: string) => {
     setInspirations(
       inspirations.map(inspiration =>
         inspiration.id === id
-          ? { ...inspiration, title, content, tag }
+          ? { ...inspiration, title, content, tag, backgroundColor, textColor }
           : inspiration
       )
     );
@@ -71,15 +79,19 @@ const InspirationEditor: React.FC<{ onSubmit: () => void; onCancel: () => void }
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tag, setTag] = useState('');
+  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [textColor, setTextColor] = useState('#000000');
   const { addInspiration } = useContext(InspirationContext) || {};
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (title && content && tag && addInspiration) {
-      addInspiration(title, content, tag);
+      addInspiration(title, content, tag, backgroundColor, textColor);
       setTitle('');
       setContent('');
       setTag('');
+      setBackgroundColor('#ffffff');
+      setTextColor('#000000');
       onSubmit();
     }
   };
@@ -114,11 +126,29 @@ const InspirationEditor: React.FC<{ onSubmit: () => void; onCancel: () => void }
           required
         />
       </Form.Group>
+      <Form.Group className="mb-3">
+        <Form.Label>背景颜色</Form.Label>
+        <Form.Control
+          type="color"
+          value={backgroundColor}
+          onChange={(e) => setBackgroundColor(e.target.value)}
+          required
+        />
+      </Form.Group>
+      <Form.Group className="mb-3">
+        <Form.Label>字体颜色</Form.Label>
+        <Form.Control
+          type="color"
+          value={textColor}
+          onChange={(e) => setTextColor(e.target.value)}
+          required
+        />
+      </Form.Group>
       <InputGroup>
         <Button variant="primary" type="submit">
           保存
         </Button>
-        <Button variant="secondary" onClick={onCancel}>
+        <Button variant="secondary" onClick={onCancel}> 
           取消
         </Button>
       </InputGroup>
@@ -149,43 +179,120 @@ const Inspiration: React.FC = () => {
   );
 };
 
-// 灵感卡片列表组件
 const InspirationList: React.FC = () => {
   const { inspirations, updateInspiration, deleteInspiration } = useContext(InspirationContext) || {};
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [editTag, setEditTag] = useState('');
+  const [editBackgroundColor, setEditBackgroundColor] = useState('#ffffff');
+  const [editTextColor, setEditTextColor] = useState('#000000');
+  const [selectedInspiration, setSelectedInspiration] = useState<{
+    id: number;
+    title: string;
+    content: string;
+    tag: string;
+    backgroundColor: string;
+    textColor: string;
+  } | null>(null);
 
   const handleEditClick = (inspiration: {
     id: number;
     title: string;
     content: string;
     tag: string;
+    backgroundColor: string;
+    textColor: string;
   }) => {
     setEditingId(inspiration.id);
     setEditTitle(inspiration.title);
     setEditContent(inspiration.content);
     setEditTag(inspiration.tag);
+    setEditBackgroundColor(inspiration.backgroundColor);
+    setEditTextColor(inspiration.textColor);
   };
 
   const handleUpdateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId !== null && updateInspiration) {
-      updateInspiration(editingId, editTitle, editContent, editTag);
+      updateInspiration(editingId, editTitle, editContent, editTag, editBackgroundColor, editTextColor);
       setEditingId(null);
-      setEditTitle('');
-      setEditContent('');
-      setEditTag('');
+      setSelectedInspiration(null); // 关闭 Modal 并清空状态
     }
   };
 
+  const handleCardClick = (inspiration: {
+    id: number;
+    title: string;
+    content: string;
+    tag: string;
+    backgroundColor: string;
+    textColor: string;
+  }) => {
+    setSelectedInspiration(inspiration);
+    setEditingId(null); // Ensure exiting edit state when clicking the card
+  };
+  const tagStyle = {
+    backgroundColor: '#f0f0f0',
+    borderRadius: '4px',
+    padding: '2px 6px',
+    display: 'inline-block'
+  };
+
   return (
-    <ListGroup>
-      {inspirations &&
-        inspirations.map((inspiration) => (
-          <ListGroup.Item key={inspiration.id} className="mb-3">
-            {editingId === inspiration.id ? (
+    <div>
+      <div className="row">
+        {inspirations &&
+          inspirations.map((inspiration) => (
+            <div key={inspiration.id} className="col-md-4 mb-3">
+              <Card 
+                onClick={() => handleCardClick(inspiration)}
+                style={{ cursor: 'pointer', backgroundColor: inspiration.backgroundColor, color: inspiration.textColor }}>
+                <Card.Body>
+                  <Card.Title>{inspiration.title}</Card.Title>
+                  <Card.Text>{inspiration.content}</Card.Text>
+
+                  <Card.Subtitle className="mb-2 text-muted" style={tagStyle}>
+                    分类: {inspiration.tag}
+                  </Card.Subtitle>
+                </Card.Body>
+              </Card>
+            </div>
+          ))}
+      </div> 
+      {selectedInspiration && (
+        <Modal 
+          show={!!selectedInspiration}
+          onHide={() => setSelectedInspiration(null)}
+        >
+          <Modal.Header closeButton style={{ backgroundColor: selectedInspiration.backgroundColor, color: selectedInspiration.textColor }}>
+            <Modal.Title className="ms-auto">{editingId === selectedInspiration.id ? '编辑灵感卡片' : selectedInspiration.title}</Modal.Title>
+          </Modal.Header>
+          {editingId !== selectedInspiration.id && (
+            <Modal.Body style={{ backgroundColor: selectedInspiration.backgroundColor, color: selectedInspiration.textColor }}>
+              <p>{selectedInspiration.content}</p>
+              <p style={tagStyle}>分类: {selectedInspiration.tag}</p>
+            </Modal.Body>
+          )}
+          <Modal.Footer style={{ backgroundColor: selectedInspiration.backgroundColor, color: selectedInspiration.textColor }}>
+            {editingId !== selectedInspiration.id && (
+              <> 
+                <Button variant="warning" onClick={() => handleEditClick(selectedInspiration)}>
+                  编辑
+                </Button>
+                <Button variant="danger" onClick={() => {
+                  if (deleteInspiration) {
+                    deleteInspiration(selectedInspiration.id);
+                    setSelectedInspiration(null);
+                  }
+                }}>
+                  删除
+                </Button>
+              </>
+            )}
+          </Modal.Footer>
+          {editingId === selectedInspiration.id && (
+            <Modal.Body>
               <Form onSubmit={handleUpdateSubmit} className="border border-primary">
                 <Form.Group className="mb-3">
                   <Form.Label>主题</Form.Label>
@@ -215,6 +322,24 @@ const InspirationList: React.FC = () => {
                     required
                   />
                 </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>背景颜色</Form.Label>
+                  <Form.Control
+                    type="color"
+                    value={editBackgroundColor}
+                    onChange={(e) => setEditBackgroundColor(e.target.value)}
+                    required
+                  />
+                </Form.Group>
+                <Form.Group className="mb-3">
+                  <Form.Label>字体颜色</Form.Label>
+                  <Form.Control
+                    type="color"
+                    value={editTextColor}
+                    onChange={(e) => setEditTextColor(e.target.value)}
+                    required
+                  />
+                </Form.Group>
                 <InputGroup>
                   <Button variant="primary" type="submit">
                     保存修改
@@ -227,38 +352,11 @@ const InspirationList: React.FC = () => {
                   </Button>
                 </InputGroup>
               </Form>
-            ) : (
-              <Card>
-                <Card.Body>
-                  <Card.Title>{inspiration.title}</Card.Title>
-                  <Card.Text>{inspiration.content}</Card.Text>
-                  <Card.Subtitle className="mb-2 text-muted">
-                    分类: {inspiration.tag}
-                  </Card.Subtitle>
-                  <InputGroup>
-                    <Button
-                      variant="warning"
-                      onClick={() => handleEditClick(inspiration)}
-                    >
-                      编辑
-                    </Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => {
-                        if (deleteInspiration) {
-                          deleteInspiration(inspiration.id);
-                        }
-                      }}
-                    >
-                      删除
-                    </Button>
-                  </InputGroup>
-                </Card.Body>
-              </Card>
-            )}
-          </ListGroup.Item>
-        ))}
-    </ListGroup>
+            </Modal.Body>
+          )}
+        </Modal>
+      )}
+    </div>
   );
 };
 

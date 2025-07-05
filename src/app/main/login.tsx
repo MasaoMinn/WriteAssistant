@@ -1,4 +1,5 @@
 "use client";
+import axios from 'axios';
 import React, { useState } from 'react';
 import { Form, Button, Container, Row, Col } from 'react-bootstrap';
 
@@ -35,7 +36,14 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isLogin) {
-      // 处理登录逻辑
+      axios.post(process.env.NEXT_PUBLIC_API_URL+'/api/auth/login',{
+        usernameOrEmail: loginData.username,
+        password: loginData.password,
+      }).then((res)=> {
+        alert(res.data);
+      }).catch((res)=> {
+        alert(res.data);
+      })
       console.log('登录数据:', loginData);
     } else {
       // 处理注册逻辑

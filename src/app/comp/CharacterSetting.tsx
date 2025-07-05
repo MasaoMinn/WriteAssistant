@@ -65,6 +65,17 @@ const CharacterSetting = () => {
               <Card.Title>{character.name}</Card.Title>
               <Card.Text>{character.description}</Card.Text>
             </Card.Body>
+            <Card className="mb-3">
+              <Card.Body>
+                <Card.Title>{character.name}</Card.Title>
+                <Button 
+                  variant="primary"
+
+                >
+                  问AI
+                </Button>
+              </Card.Body>
+            </Card>
           </Card>
         ))
       )}

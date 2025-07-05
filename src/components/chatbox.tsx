@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { Button, Form } from "react-bootstrap";
+import { Clipboard2 } from 'react-bootstrap-icons';
 
 interface Message {
   sender: "user" | "ai";
@@ -45,15 +46,15 @@ const ChatBox: React.FC<ChatBoxProps> = ({ onSend }) => {
   };
 
   return (
-    <div className="card" style={{ maxWidth: "600px", margin: "0 auto" }}>
+    <div className="card w-100" style={{ margin: "0 auto" }}>
       <div className="card-header bg-primary text-white">
         AI Chat
       </div>
       <div
         className="card-body"
         style={{
-          height: "400px",
-          overflowY: "auto",
+          minHeight: "50vh",
+          overflow: "auto",
           backgroundColor: "#f8f9fa",
         }}
       >
@@ -70,6 +71,16 @@ const ChatBox: React.FC<ChatBoxProps> = ({ onSend }) => {
             >
               {msg.text}
             </div>
+            {msg.sender === "ai" && (
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => navigator.clipboard.writeText(msg.text)}
+                className="ms-2"
+              >
+                <Clipboard2 />
+              </Button>
+            )}
           </div>
         ))}
         {loading && (
