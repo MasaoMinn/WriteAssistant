@@ -1,5 +1,11 @@
 import React, { useState, createContext, useContext } from 'react';
 import { Button, Card, Form, InputGroup, Modal } from 'react-bootstrap';
+import { useAiContxt } from '../comp/AIContext';
+type Contxt = {
+  title: string;
+  content: string;
+  lable: string;
+};
 
 // 创建灵感卡片上下文
 const InspirationContext = createContext<{
@@ -238,6 +244,7 @@ const InspirationList: React.FC = () => {
     padding: '2px 6px',
     display: 'inline-block'
   };
+    const {aicontxt,setAicontxt} =useAiContxt();
 
   return (
     <div>
@@ -288,6 +295,16 @@ const InspirationList: React.FC = () => {
                 }}>
                   删除
                 </Button>
+                  <Button onClick={()=> {
+                    const newItem :Contxt = {
+                      title:selectedInspiration.title,
+                      content:selectedInspiration.content,
+                      lable:'inspiration-'+selectedInspiration.tag,
+                    }
+                    setAicontxt([...aicontxt,newItem]);
+                  }}>
+                    问AI
+                  </Button>
               </>
             )}
           </Modal.Footer>

@@ -1,18 +1,30 @@
 "use client";
 import { useState } from "react";
 import { Card, Button, Form } from "react-bootstrap";
+import { useAiContxt } from "./AIContext";
 
 interface Character { 
   id: number;
   name: string;
   description: string;
+  status:'已回收'|'未回收'|'忽略';
 }
+type Contxt = {
+  title: string;
+  content: string;
+  lable: string;
+};
 
 const initialCharacters: Character[] = [
-  { id: 1, name: "角色1", description: "这是角色1的描述" },
-  { id: 2, name: "角色2", description: "这是角色2的描述" },
+  { id: 1, name: "角色1", description: "这是角色1的描述",status:'已回收' },
+  { id: 2, name: "角色2", description: "这是角色2的描述" ,status:'未回收'},
 ];
 
+const statColor = {
+  '已回收':'#FF9999',
+  '未回收':'green',
+  '忽略':'blue',
+}
 const CharacterSetting = () => {
   const [characters, setCharacters] = useState<Character[]>(initialCharacters);
   const [showCard, setShowCard] = useState<boolean>(false);
@@ -50,7 +62,7 @@ const CharacterSetting = () => {
     setShowCard(false);
     setShowCharacterList(true);
   };
-
+    const {aicontxt,setAicontxt} =useAiContxt();
   return (
     <div>
       {showCharacterList && (
@@ -58,24 +70,22 @@ const CharacterSetting = () => {
           <Card 
             key={character.id} 
             className="mb-3" 
-            onClick={() => handleCardClick(character.id)}
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer",backgroundColor:statColor[character.status] }}
           >
-            <Card.Body>
-              <Card.Title>{character.name}</Card.Title>
-              <Card.Text>{character.description}</Card.Text>
-            </Card.Body>
-            <Card className="mb-3">
-              <Card.Body>
-                <Card.Title>{character.name}</Card.Title>
-                <Button 
-                  variant="primary"
-
-                >
-                  问AI
-                </Button>
-              </Card.Body>
-            </Card>
+          <Card.Body onClick={() => handleCardClick(character.id)}>
+            <Card.Title>{character.name}</Card.Title>
+            <Card.Text>{character.description}</Card.Text>
+          </Card.Body>
+            <button style={{width:'8vh'}} onClick={()=> {
+                const newItem :Contxt = {
+                  title:character.name,
+                  content:character.description,
+                  lable:'character',
+                }
+                setAicontxt([...aicontxt,newItem]);
+              }}>
+              问AI
+            </button>
           </Card>
         ))
       )}

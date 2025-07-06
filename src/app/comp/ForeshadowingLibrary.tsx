@@ -1,13 +1,18 @@
 "use client";
 import { useState } from "react";
 import { Card, Button, Form } from "react-bootstrap";
+import {  useAiContxt } from "./AIContext";
 
 interface Foreshadowing {
   id: number;
   title: string;
   description: string;
 }
-
+interface ContextItem {
+  title: string;
+  content: string;
+  lable:string;
+}
 const initialForeshadowings: Foreshadowing[] = [
   { id: 1, title: "伏笔1", description: "这是伏笔1的描述" },
   { id: 2, title: "伏笔2", description: "这是伏笔2的描述" },
@@ -23,6 +28,7 @@ const ForeshadowingLibrary = () => {
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDescription, setEditedDescription] = useState("");
   const [showForeshadowingList, setShowForeshadowingList] = useState<boolean>(true);
+  const { aicontxt, setAicontxt } = useAiContxt();
 
   const handleCardClick = (id: number) => {
     const foreshadowing = foreshadowings.find((fs) => fs.id === id);
@@ -74,7 +80,7 @@ const ForeshadowingLibrary = () => {
       {showForeshadowingList && (
         foreshadowings.map((foreshadowing) => (
           <Card 
-            key={foreshadowing.id} 
+            key={foreshadowing.id}
             className="mb-3"
             onClick={() => handleCardClick(foreshadowing.id)}
             style={{ cursor: "pointer" }}
@@ -92,7 +98,6 @@ const ForeshadowingLibrary = () => {
           </Card>
         ))
       )}
-
       {showCard && editingId !== null && (
         <Card className="mt-3">
           <Card.Body>
@@ -123,7 +128,14 @@ const ForeshadowingLibrary = () => {
             <Card.Title>{editedTitle}</Card.Title>
             <Card.Text>{editedDescription}</Card.Text>
             <Button 
-
+            onClick={() => {
+                const newItem: ContextItem = {
+                title: editedTitle,
+                content: editedDescription,
+                lable:'foreshadowing'
+              };
+              setAicontxt([...aicontxt, newItem]);
+            }}
             >
               问AI
             </Button>

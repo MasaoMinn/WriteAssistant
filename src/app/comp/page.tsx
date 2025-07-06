@@ -1,281 +1,39 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Button, Col, Container, Row } from "react-bootstrap";
-import { useUserInfo } from "@/context/user"; 
-import { getCookie } from "@/context/user";
 import Link from "next/link";
-import ChatBox from "@/components/chatbox";
+import ChatBox from "./ChatBox";
 import CharacterSetting from "@/app/comp/CharacterSetting";
 import ForeshadowingLibrary from "./ForeshadowingLibrary";
+import Outline from "./Outline";
+import Write from "./Write";
+import axios from "axios";
+import Inspiration from "../main/inspiration";
+import { AIContxtProvider } from "./AIContext";
+type chapter = {
+  id:number;
+  title:string;
+  content:string;
+};
+
 
 export default function MailComponent() {
-  const { userInfo, setUserInfo } = useUserInfo(); 
-  const [status, setStatus] = useState<'write'|'fubi'|'sheding'|'dagang'>('write');
-  
-
-  useEffect(() => {
-    const userInfoCookie = getCookie('userInfo');
-    if (!userInfoCookie && userInfo?.data) {
-      setUserInfo('', {
-        id: 0,
-        username: '',
-        password: null,
-        emailAddress: '',
-        telephone: '',
-        createTime: '',
-        systemWord: ''
-      });
-      window.location.reload();
-    }
-  }, [userInfo, setUserInfo]);
-
-  const Write = () => {
-    const [article,setArticle] = useState<string>('示例小说');
-    return (
-      <div className="p-3 mb-3 border border-secondary rounded-3" style={{ minHeight: '300px', backgroundColor: '#f8f9fa' }}>
-        <textarea
-          onChange={(e) => setArticle(e.target.value)}
-          value={article}
-          className="w-100"
-          style={{minHeight:'100vh'}}
-        />
-      </div>
-    );
-  }
-
-  const Outline = () => {
-    type dagang = {
-      title: string;
-      story: string;
-      children: dagang[];
-    };
-    const initialOutline: dagang[] = [
-      {
-        title: "大纲标题",
-        story: "大纲故事内容",
-        children: []
-      },
-      {
-        title: "大纲标题2",
-        story: "大纲故事内容2",
-        children: []
-      },
-      {
-        title: "大纲标题3",
-        story: "大纲故事内容3",
-        children: [
-          {
-            title: "子大纲标题1",
-            story: "子大纲故事内容1",
-            children: []
-          },
-          {
-            title: "子大纲标题2",
-            story: "子大纲故事内容2",
-            children: []
-          }
-        ]
+  const [status, setStatus] = useState<'write'|'fubi'|'sheding'|'dagang'|'inspiration'>('write');
+  const [article, setArticle] = useState<chapter[]>([{id:1,title:'',content:''}]);
+  const [current,setCurrent] =useState<number>(1);
+  useEffect(()=> {
+    axios.get(process.env.NEXT_PUBLIC_API_URL + '/api/docs/batch?ids=1,2,3,4,5,6,7,8,9,10',{
+    }).then(response => {
+      if (response.data && Array.isArray(response.data)) {
+        setArticle(response.data);
+      } else {
+        console.error("获取文章数据失败，数据格式不正确");
       }
-    ]
-    const [outline, setOutline] = useState<dagang[]>(initialOutline);
-    const [editedPath, setEditedPath] = useState<number[] | null>(null);
-    const [editedOutline, setEditedOutline] = useState<dagang[]>([]);
+    }).catch(error => {
+      console.error("获取文章数据失败", error);
+    })
+  });
 
-    useEffect(() => {
-      setEditedOutline(outline);
-    }, [outline]);
-
-    const handleEditClick = (path: number[]) => {
-      console.log('开始编辑大纲项:', path);
-      setEditedPath(path);
-    };
-
-    const handleSaveClick = () => {
-      if (editedPath) {
-        console.log('保存大纲项:', editedPath, editedOutline);
-        setOutline(editedOutline);
-        setEditedPath(null);
-        // 这里可以添加保存大纲到后端的逻辑
-      }
-    };
-
-    const handleTitleChange = (path: number[], value: string) => {
-      const newOutline = editedOutline.map((item, i) => {
-        if (i === path[0]) {
-          return updateNestedItem(item, path.slice(1), 'title', value);
-        }
-        return item;
-      });
-      setEditedOutline(newOutline);
-    };
-
-    const updateNestedItem = (item: dagang, path: number[], key: 'title' | 'story', value: string): dagang => {
-      if (path.length === 0) {
-        return {
-          ...item,
-          [key]: value
-        };
-      }
-      return {
-        ...item,
-        children: item.children.map((child, i) =>
-          i === path[0] ? updateNestedItem(child, path.slice(1), key, value) : child
-        )
-      };
-    };
-
-    const handleStoryChange = (path: number[], value: string) => {
-      const newOutline = editedOutline.map((item, i) => {
-        if (i === path[0]) {
-          return updateNestedItem(item, path.slice(1), 'story', value);
-        }
-        return item;
-      });
-      setEditedOutline(newOutline);
-    };
-
-    const handleDeleteClick = (path: number[]) => {
-      setEditedOutline(prev => {
-        const newOutline = [...prev];
-        let currentLevel = newOutline;
-        
-        // 遍历到目标层级的父级
-        for (let i = 0; i < path.length - 1; i++) {
-          currentLevel = currentLevel[path[i]].children;
-        }
-        
-        // 删除指定项
-        currentLevel.splice(path[path.length - 1], 1);
-        return newOutline;
-      });
-    };
-
-    const handleAddSiblingClick = (path: number[]) => {
-      const newOutline = [...editedOutline];
-      let parentLevel = newOutline;
-      
-      // 遍历到父级层级
-      for (let i = 0; i < path.length - 1; i++) {
-        parentLevel = parentLevel[path[i]].children;
-      }
-      
-      const index = path[path.length - 1];
-      parentLevel.splice(index + 1, 0, {
-        title: "新大纲项",
-        story: "",
-        children: []
-      });
-      setEditedOutline(newOutline);
-    };
-
-    const handleAddChildClick = (path: number[]) => {
-      const newOutline = [...editedOutline];
-      let currentLevel = newOutline;
-      
-      for (let i = 0; i < path.length; i++) {
-        currentLevel = currentLevel[path[i]].children;
-      }
-      
-      currentLevel.push({
-        title: "新子大纲项",
-        story: "",
-        children: []
-      });
-      setEditedOutline(newOutline);
-    };
-
-    const renderOutline = (items: dagang[], level = 0, path: number[] = []) => {
-      return (
-        <ul style={{ listStyleType: 'none', paddingLeft: `${level * 30}px`, position: 'relative' }}>
-          {items.map((item, index) => {
-            const currentPath = path.concat([index]);
-            const isCurrentItemEditing = arrayEquals(editedPath, currentPath);
-            // 确保 item 存在且 children 属性存在
-            const itemChildren = item && item.children ? item.children : [];
-            return (
-              <li key={index} style={{ position: 'relative' }}>
-                {level > 0 && (
-                  <div style={{ position: 'absolute', left: '-20px', top: '0', bottom: '0', borderLeft: '2px solid #666' }} />
-                )}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    {isCurrentItemEditing ? (
-                      <input
-                        type="text"
-                        value={item.title}
-                        onChange={(e) => handleTitleChange(currentPath, e.target.value)}
-                        placeholder="标题"
-                        style={{ flexGrow: 1, marginRight: '10px' }} // 添加样式使输入框自适应
-                      />
-                    ) : (
-                      <h4 className="text-dark fs-5 mb-2">{item.title}</h4>
-                    )}
-                    {!isCurrentItemEditing && (
-                      <button
-                        onClick={() => handleEditClick(currentPath)}
-                        className="btn btn-light me-2"
-                        style={{ marginRight: '5px' }}
-                      >
-                        <i className="bi bi-pencil-square"></i>
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleAddSiblingClick(currentPath)}
-                      className="btn btn-light me-2"
-                      style={{ marginRight: '5px' }}
-                    >
-                      添加同级
-                    </button>
-                    <button
-                      onClick={() => handleAddChildClick(currentPath)}
-                      className="btn btn-light"
-                      style={{ marginRight: '5px' }}
-                    >
-                      添加子级
-                    </button>
-                    <button
-                      onClick={() => handleDeleteClick(currentPath)}
-                      className="btn btn-light"
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
-                  </div>
-                  {isCurrentItemEditing ? (
-                    <textarea
-                      value={item.story}
-                      onChange={(e) => handleStoryChange(currentPath, e.target.value)}
-                      placeholder="故事内容"
-                      style={{ width: '100%', marginTop: '10px' }} // 添加样式使文本域自适应
-                    />
-                  ) : (
-                    <p className="text-muted fs-6 mb-3">{item.story}</p>
-                  )}
-                </div>
-                {itemChildren.length > 0 && renderOutline(itemChildren, level + 1, currentPath)}
-                {isCurrentItemEditing && (
-                  <div className="mt-3">
-                    <button onClick={handleSaveClick} className="btn btn-primary me-2 mt-3">
-                      <i className="bi bi-save"></i>
-                    </button>
-                  </div>
-                )}
-              </li>);
-          })}
-        </ul>
-      );
-    }
-
-    const arrayEquals = (a: number[] | null, b: number[]): boolean => {
-      if (!a || a.length !== b.length) return false;
-      return a.every((val, index) => val === b[index]);
-    }
-
-    return (
-      <div>
-        {renderOutline(editedOutline)}
-      </div>
-    );
-  };
   const mockAiReply = async (message: string): Promise<string> => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return `AI Reply to: "${message}"`;
@@ -283,7 +41,7 @@ export default function MailComponent() {
   const [aiShow,setAiShow] = useState<boolean>(true);
 
   return (
-    <> 
+    <AIContxtProvider> 
     <Link href="/">返回首页</Link>
     <Container className="bg-light p-4" fluid style={{ opacity: 0.95, boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)' }}>
       <Row className="mb-4 align-items-start" style={{ minHeight: '100vh' }}>
@@ -318,24 +76,46 @@ export default function MailComponent() {
                 设定集
                 <i className="bi bi-file-earmark-text ms-2"></i>
               </div>
+              <div
+                onClick={() => setStatus('inspiration')}
+                className={`w-100 btn btn-primary text-truncate my-2 py-3 ${status === 'inspiration' ? 'active' : ''}`} style={{ borderRadius: '10px' }}
+              >
+                灵感库
+                <i className="bi bi-file-earmark-text ms-2"></i>
+              </div>
+            </Col>
+          </Row>
+          <Row>
+            <Col>
+              {article.map((item, index) => (
+                <div
+                  key={index}
+                  className={`w-100 btn btn-light text-truncate my-2 py-3 ${status === 'write' ? 'active' : ''}`}
+                  style={{ borderRadius: '10px', cursor: 'pointer' }}
+                  onClick={() => {setStatus('write');setCurrent(index+1)}}
+                >
+                  {item.title || `章节 ${index + 1}`}
+                </div>
+              ),)}
             </Col>
           </Row>
         </Col>
         <Col className="bg-white p-4 border rounded-3">
-          {status === 'write' && <Write />}
+          {status === 'write' && <Write chapter={article[current-1]} />}
           {status === 'dagang' && <Outline />}
           {status === 'sheding' && <CharacterSetting />}
           {status === 'fubi' && <ForeshadowingLibrary />}
+          {status === 'inspiration' && <Inspiration />}
         </Col>
         <Col lg={1}>
           <Button variant="light" style={{height:'100vh'}} onClick={()=>setAiShow(!aiShow)}>{aiShow?'>':'<'}</Button>
         </Col>
         <Col style={{display:aiShow?'block':'none'}}>
-          <ChatBox onSend={mockAiReply}/>
+          <ChatBox onSend={mockAiReply} />
         </Col>
       </Row>
     </Container>
-    </>
+    </AIContxtProvider>
   );
 
 }
